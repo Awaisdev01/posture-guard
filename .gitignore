@@ -1,0 +1,7 @@
+# runtime data (private to each machine)
+logs/
+__pycache__/
+*.pyc
+.DS_Store
+# models are fetched via download_models.sh (~13 MB binaries)
+models/

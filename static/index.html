@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Posture Guard</title>
+<style>
+:root{
+  --bg:#0b0e14; --panel:#131722; --panel2:#181e2c; --border:#232a3a;
+  --text:#e8ecf4; --muted:#8a93a6; --good:#3ddc84; --bad:#ff5d5d; --warn:#ffb454;
+  --accent:#6c8cff; --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;min-height:100vh;padding:20px}
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+header .logo{font-size:26px}
+header h1{font-size:20px;font-weight:700;letter-spacing:-.2px}
+header .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.grid{display:grid;grid-template-columns:1.55fr 1fr;gap:16px}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card .hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);font-weight:600}
+/* video */
+.videobox{position:relative;background:#000}
+.videobox img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.videobox .ring{position:absolute;inset:0;border:3px solid var(--good);border-radius:var(--radius);pointer-events:none;transition:border-color .3s}
+.statuspill{position:absolute;left:14px;top:14px;background:rgba(10,12,18,.75);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--good)}
+.pulse{animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.reason{position:absolute;left:14px;bottom:12px;background:rgba(10,12,18,.75);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:10px;padding:6px 12px;font-size:12.5px;color:#dfe5ef;max-width:85%}
+.streakbar{position:absolute;right:14px;bottom:12px;width:130px}
+.streakbar .lab{font-size:10.5px;color:#cfd6e4;text-align:right;margin-bottom:4px;text-shadow:0 1px 2px #000}
+.streakbar .bar{height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
+.streakbar .fill{height:100%;width:0%;background:var(--bad);border-radius:3px;transition:width .2s}
+/* score */
+.scorewrap{display:flex;flex-direction:column;align-items:center;padding:20px 16px 10px}
+.ring{position:relative;width:168px;height:168px}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num b{font-size:40px;font-weight:800;letter-spacing:-1px}
+.ring .num span{font-size:11px;color:var(--muted)}
+.scorelabel{margin-top:8px;font-size:13px;color:var(--muted)}
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 16px}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.stat .v{font-size:19px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+/* timeline */
+.tl{padding:6px 16px 16px}
+canvas.tlc{width:100%;height:96px;display:block}
+.tlkey{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:6px}
+.tlkey i{width:10px;height:10px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:5px}
+/* controls */
+.controls{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.btnrow{display:flex;gap:10px}
+button{border:0;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:filter .15s,opacity .15s}
+button:hover{filter:brightness(1.12)}
+button:disabled{opacity:.45;cursor:default}
+.primary{background:var(--accent);color:#fff;flex:1}
+.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text)}
+.sl{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.sl label{color:var(--muted);width:150px;flex:none}
+.sl input[type=range]{flex:1;accent-color:var(--accent)}
+.sl output{width:52px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.togglerow{display:flex;align-items:center;justify-content:space-between;font-size:13.5px}
+.switch{position:relative;width:42px;height:24px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch .tr{position:absolute;inset:0;background:var(--panel2);border:1px solid var(--border);border-radius:999px;transition:.2s;cursor:pointer}
+.switch .tr:before{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.2s}
+.switch input:checked+.tr{background:var(--accent);border-color:var(--accent)}
+.switch input:checked+.tr:before{background:#fff;transform:translateX(18px)}
+/* events */
+.events{padding:8px 8px 10px;max-height:220px;overflow-y:auto}
+.ev{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;font-size:12.5px;border-radius:8px}
+.ev:hover{background:var(--panel2)}
+.ev .t{color:var(--muted);font-variant-numeric:tabular-nums;flex:none;font-size:11.5px;padding-top:1px}
+.ev .ic{flex:none;font-size:13px}
+.ev.alert .msg{color:#ffb1b1}
+.ev.info .msg{color:#bcd0ff}
+/* nocam card */
+.nocam{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#0d1017;text-align:center;padding:24px}
+.nocam h3{font-size:16px}
+.nocam p{color:var(--muted);font-size:13px;line-height:1.55;max-width:420px}
+.nocam code{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:2px 7px;font-size:12px}
+footer{margin-top:16px;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🪑</div>
+    <div>
+      <h1>Posture Guard</h1>
+      <div class="sub">Tech-neck coach — live from your Mac webcam</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="hd"><span>Live camera</span><span id="fps" style="font-variant-numeric:tabular-nums"></span></div>
+      <div class="videobox">
+        <img id="video" src="/video" alt="live">
+        <div class="ring" id="ring"></div>
+        <div class="statuspill"><span class="dot" id="dot"></span><span id="statusTxt">Booting…</span></div>
+        <div class="reason" id="reason" style="display:none"></div>
+        <div class="streakbar">
+          <div class="lab" id="streakLab">bad-posture streak</div>
+          <div class="bar"><div class="fill" id="streakFill"></div></div>
+        </div>
+        <div class="nocam" id="nocam">
+          <h3>📷 Camera not available</h3>
+          <p>macOS is blocking camera access. Open <b>System Settings → Privacy &amp; Security → Camera</b> and enable it for the app you launched this from (e.g. <code>Terminal</code> or <code>python</code>), then restart.</p>
+        </div>
+      </div>
+      <div class="tl">
+        <canvas class="tlc" id="timeline"></canvas>
+        <div class="tlkey">
+          <span><i style="background:var(--good)"></i>good</span>
+          <span><i style="background:var(--bad)"></i>slouch</span>
+          <span style="margin-left:auto">today · 5-min buckets (UTC+local)</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="hd"><span>Posture score</span><span id="scope" style="cursor:pointer;color:var(--accent)">session ⇄</span></div>
+        <div class="scorewrap">
+          <div class="ring">
+            <svg width="168" height="168" viewBox="0 0 168 168">
+              <circle cx="84" cy="84" r="72" fill="none" stroke="#232a3a" stroke-width="14"/>
+              <circle id="arc" cx="84" cy="84" r="72" fill="none" stroke="var(--good)" stroke-width="14"
+                      stroke-linecap="round" stroke-dasharray="452.4" stroke-dashoffset="452.4"/>
+            </svg>
+            <div class="num"><b id="scoreNum">—</b><span id="scoreSub">no data yet</span></div>
+          </div>
+          <div class="scorelabel" id="scoreLabel">Session score = good time ÷ monitored time</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="k">Good time</div><div class="v" id="goodT" style="color:var(--good)">0s</div></div>
+          <div class="stat"><div class="k">Slouch time</div><div class="v" id="badT" style="color:var(--bad)">0s</div></div>
+          <div class="stat"><div class="k">Alerts today</div><div class="v" id="alertN">0</div></div>
+          <div class="stat"><div class="k">Monitored</div><div class="v" id="monT">0s</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="hd"><span>Controls &amp; sensitivity</span></div>
+        <div class="controls">
+          <div class="btnrow">
+            <button class="primary" id="calBtn">🎯 Calibrate (sit upright)</button>
+            <button class="ghost" id="resetBtn" title="Reset session stats">↺</button>
+          </div>
+          <div class="sl">
+            <label>Slouch tolerance</label>
+            <input type="range" id="rSlouch" min="5" max="35" step="1">
+            <output id="oSlouch"></output>
+          </div>
+          <div class="sl">
+            <label>Head tilt limit</label>
+            <input type="range" id="rTilt" min="5" max="25" step="1">
+            <output id="oTilt"></output>
+          </div>
+          <div class="sl">
+            <label>Alert delay</label>
+            <input type="range" id="rDelay" min="1" max="15" step="1">
+            <output id="oDelay"></output>
+          </div>
+          <div class="togglerow">
+            <span>🔔 Sound alerts</span>
+            <label class="switch"><input type="checkbox" id="soundT"><span class="tr"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="hd"><span>Activity</span></div>
+        <div class="events" id="events"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>CSV + daily JSON logs are written to <code>logs/</code> next to the app · close the Terminal tab to stop</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let lastState = null, soundOn = true, scope = "session", alertArmed = true;
+
+function fmt(s){ s=Math.round(s); if(s<60) return s+"s";
+  const m=Math.floor(s/60), h=Math.floor(m/60);
+  return h? h+"h "+(m%60)+"m" : m+"m "+(s%60)+"s"; }
+
+function setRing(color){ $("ring").style.borderColor=color;
+  const dot=$("dot"); dot.style.background=color;
+  dot.classList.toggle("pulse", lastState && (lastState.status==="BAD"||lastState.status==="CALIBRATING")); }
+
+const STATUS_TXT={BOOTING:"Booting…",NOCAM:"No camera",NODETECT:"No person detected",
+  CALIBRATING:"Calibrating — sit upright & still",GOOD:"Good posture",WARN:"Needs calibration",BAD:"Bad posture"};
+
+function beep(freq,dur,when=0){
+  const ctx=beep.ctx||(beep.ctx=new (window.AudioContext||window.webkitAudioContext)());
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type="sine"; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.0001,ctx.currentTime+when);
+  g.gain.exponentialRampToValueAtTime(0.18,ctx.currentTime+when+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+when+dur);
+  o.connect(g).connect(ctx.destination);
+  o.start(ctx.currentTime+when); o.stop(ctx.currentTime+when+dur+0.05);
+}
+
+function updateTimeline(buckets){
+  const c=$("timeline"), dpr=window.devicePixelRatio||1;
+  const w=c.clientWidth, h=96; c.width=w*dpr; c.height=h*dpr;
+  const x=c.getContext("2d"); x.scale(dpr,dpr); x.clearRect(0,0,w,h);
+  const keys=Object.keys(buckets).sort();
+  if(!keys.length){ x.fillStyle="#8a93a6"; x.font="12px -apple-system"; x.fillText("Today's timeline appears after a few minutes of monitoring",12,h/2); return; }
+  const n=keys.length, gap=2, bw=Math.max(4,(w-8)/n-gap);
+  keys.forEach((k,i)=>{
+    const [g,b]=buckets[k]; const tot=g+b; if(!tot) return;
+    const gr=g/tot, Hmax=78, hb=Hmax*Math.min(1,tot/300), // 5min=300s full scale
+          hg=hb*gr, hh=hb-hg, xx=4+i*(bw+gap), base=h-8;
+    x.fillStyle="#ff5d5d"; x.fillRect(xx,base-hh,bw,hh);
+    x.fillStyle="#3ddc84"; x.fillRect(xx,base-hg-hh,bw,hg);
+  });
+}
+
+async function poll(){
+  try{
+    const r=await fetch("/api/state"); const s=await r.json(); lastState=s;
+    // camera error
+    $("nocam").style.display = s.status==="NOCAM" ? "flex" : "none";
+    // status
+    $("statusTxt").textContent=STATUS_TXT[s.status]||s.status;
+    const col={GOOD:"var(--good)",BAD:"var(--bad)",WARN:"var(--warn)",CALIBRATING:"var(--warn)",
+               NODETECT:"#8a93a6",NOCAM:"var(--bad)",BOOTING:"#8a93a6"}[s.status]||"#8a93a6";
+    setRing(col);
+    const rs=$("reason");
+    if(s.reason && !["GOOD"].includes(s.status)){ rs.style.display="block"; rs.textContent=s.reason; }
+    else rs.style.display=s.reason?"block":"none", rs.textContent=s.reason;
+    // streak bar
+    const frac=Math.min(1, s.bad_streak/(s.settings.alert_delay_s||3));
+    $("streakFill").style.width=(frac*100)+"%";
+    $("streakLab").textContent=frac>0.02? `bad streak ${s.bad_streak.toFixed(1)}s / ${s.settings.alert_delay_s}s` : "bad-posture streak";
+    // score
+    const useSession=scope==="session";
+    const g=useSession?s.good_s:s.today.good_s, b=useSession?s.bad_s:s.today.bad_s;
+    const sc=(g+b)>0? Math.round(g/(g+b)*100):null;
+    $("scoreNum").textContent= sc===null?"—":sc+"%";
+    $("scoreNum").style.color = sc===null?"var(--text)": sc>=85?"var(--good)": sc>=60?"var(--warn)":"var(--bad)";
+    $("arc").setAttribute("stroke", sc===null?"var(--good)": sc>=85?"#3ddc84": sc>=60?"#ffb454":"#ff5d5d");
+    const off=452.4*(1-((sc||0)/100)); $("arc").style.transition="stroke-dashoffset .6s";
+    $("arc").setAttribute("stroke-dashoffset", off);
+    $("scoreSub").textContent= sc===null? (s.calibrated?"waiting…":"run calibration") : (useSession?"session":"today");
+    $("goodT").textContent=fmt(g); $("badT").textContent=fmt(b);
+    $("alertN").textContent=s.alerts; $("monT").textContent=fmt(g+b);
+    $("scope").textContent=useSession?"session ⇄":"today ⇄";
+    // events
+    $("events").innerHTML = s.events.map(e=>{
+      const t=new Date(e.t*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const ic=e.type==="alert"?"⚠️":"✅";
+      return `<div class="ev ${e.type}"><span class="t">${t}</span><span class="ic">${ic}</span><span class="msg">${e.msg}</span></div>`;
+    }).join("") || `<div class="ev info"><span class="msg" style="color:var(--muted)">No events yet</span></div>`;
+    updateTimeline(s.today.buckets);
+    // beep on alert
+    if(s.events.length && s.events[0].type==="alert"){
+      if(soundOn && alertArmed){
+        beep(660,0.14); beep(520,0.16,0.16);
+        if("Notification" in window && Notification.permission==="granted")
+          new Notification("Posture Guard",{body:s.events[0].msg});
+      }
+      alertArmed=false;
+    } else if(s.status==="GOOD"){ alertArmed=true; }
+    // settings UI sync
+    syncSliders(s.settings);
+  }catch(e){ /* server restarting */ }
+  setTimeout(poll, 600);
+}
+
+function syncSliders(st){
+  if(syncSliders.busy) return;
+  $("rSlouch").value=Math.round(st.slouch_sensitivity*100); $("oSlouch").textContent=Math.round(st.slouch_sensitivity*100)+"%";
+  $("rTilt").value=st.tilt_thresh_deg; $("oTilt").textContent=st.tilt_thresh_deg+"°";
+  $("rDelay").value=st.alert_delay_s; $("oDelay").textContent=st.alert_delay_s+"s";
+  $("soundT").checked=!!st.sound; soundOn=!!st.sound;
+}
+$("rSlouch").oninput=e=>{ $("oSlouch").textContent=e.target.value+"%"; push({slouch_sensitivity:e.target.value/100}); };
+$("rTilt").oninput=e=>{ $("oTilt").textContent=e.target.value+"°"; push({tilt_thresh_deg:+e.target.value}); };
+$("rDelay").oninput=e=>{ $("oDelay").textContent=e.target.value+"s"; push({alert_delay_s:+e.target.value}); };
+$("soundT").onchange=e=>{ soundOn=e.target.checked; push({sound:soundOn}); if(soundOn) beep(700,0.1); };
+syncSliders.busy=false;
+async function push(patch){ syncSliders.busy=true; await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(patch)}); setTimeout(()=>syncSliders.busy=false,400); }
+
+$("calBtn").onclick=async()=>{
+  await fetch("/api/calibrate",{method:"POST"});
+  $("calBtn").textContent="⏳ Calibrating…";
+  const iv=setInterval(async()=>{
+    const r=await fetch("/api/state"); const s=await r.json();
+    if(!s.calibrating){ clearInterval(iv); $("calBtn").textContent="🎯 Calibrate (sit upright)"; }
+  },500);
+};
+$("resetBtn").onclick=async()=>{ await fetch("/api/reset",{method:"POST"}); };
+$("scope").onclick=()=>{ scope=scope==="session"?"today":"session"; };
+
+if("Notification" in window && Notification.permission==="default")
+  Notification.requestPermission().catch(()=>{});
+poll();
+</script>
+</body>
+</html>
